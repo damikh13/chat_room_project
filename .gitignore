@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # MACOS
 .DS_Store
+
+# My Notes
+notes.rtf
