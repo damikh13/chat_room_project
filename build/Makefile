@@ -57,10 +57,10 @@ RM = /opt/homebrew/Cellar/cmake/3.27.7/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project"
+CMAKE_SOURCE_DIR = /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build"
+CMAKE_BINARY_DIR = /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles" "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build//CMakeFiles/progress.marks"
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles" 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -117,24 +117,38 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named ChatRoom
+# Target rules for targets named server
 
 # Build rule for target.
-ChatRoom: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ChatRoom
-.PHONY : ChatRoom
+server: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 server
+.PHONY : server
 
 # fast build rule for target.
-ChatRoom/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/build
-.PHONY : ChatRoom/fast
+server/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
+.PHONY : server/fast
+
+#=============================================================================
+# Target rules for targets named client
+
+# Build rule for target.
+client: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 client
+.PHONY : client
+
+# fast build rule for target.
+client/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
+.PHONY : client/fast
 
 src/ChatRoom.o: src/ChatRoom.cpp.o
 .PHONY : src/ChatRoom.o
 
 # target to build an object file
 src/ChatRoom.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/ChatRoom.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ChatRoom.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/ChatRoom.cpp.o
 .PHONY : src/ChatRoom.cpp.o
 
 src/ChatRoom.i: src/ChatRoom.cpp.i
@@ -142,7 +156,8 @@ src/ChatRoom.i: src/ChatRoom.cpp.i
 
 # target to preprocess a source file
 src/ChatRoom.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/ChatRoom.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ChatRoom.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/ChatRoom.cpp.i
 .PHONY : src/ChatRoom.cpp.i
 
 src/ChatRoom.s: src/ChatRoom.cpp.s
@@ -150,7 +165,8 @@ src/ChatRoom.s: src/ChatRoom.cpp.s
 
 # target to generate assembly for a file
 src/ChatRoom.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/ChatRoom.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ChatRoom.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/ChatRoom.cpp.s
 .PHONY : src/ChatRoom.cpp.s
 
 src/ConfigParser.o: src/ConfigParser.cpp.o
@@ -158,7 +174,8 @@ src/ConfigParser.o: src/ConfigParser.cpp.o
 
 # target to build an object file
 src/ConfigParser.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/ConfigParser.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ConfigParser.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/ConfigParser.cpp.o
 .PHONY : src/ConfigParser.cpp.o
 
 src/ConfigParser.i: src/ConfigParser.cpp.i
@@ -166,7 +183,8 @@ src/ConfigParser.i: src/ConfigParser.cpp.i
 
 # target to preprocess a source file
 src/ConfigParser.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/ConfigParser.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ConfigParser.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/ConfigParser.cpp.i
 .PHONY : src/ConfigParser.cpp.i
 
 src/ConfigParser.s: src/ConfigParser.cpp.s
@@ -174,7 +192,8 @@ src/ConfigParser.s: src/ConfigParser.cpp.s
 
 # target to generate assembly for a file
 src/ConfigParser.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/ConfigParser.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ConfigParser.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/ConfigParser.cpp.s
 .PHONY : src/ConfigParser.cpp.s
 
 src/Logger.o: src/Logger.cpp.o
@@ -182,7 +201,8 @@ src/Logger.o: src/Logger.cpp.o
 
 # target to build an object file
 src/Logger.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/Logger.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/Logger.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/Logger.cpp.o
 .PHONY : src/Logger.cpp.o
 
 src/Logger.i: src/Logger.cpp.i
@@ -190,7 +210,8 @@ src/Logger.i: src/Logger.cpp.i
 
 # target to preprocess a source file
 src/Logger.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/Logger.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/Logger.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/Logger.cpp.i
 .PHONY : src/Logger.cpp.i
 
 src/Logger.s: src/Logger.cpp.s
@@ -198,7 +219,8 @@ src/Logger.s: src/Logger.cpp.s
 
 # target to generate assembly for a file
 src/Logger.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/Logger.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/Logger.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/Logger.cpp.s
 .PHONY : src/Logger.cpp.s
 
 src/Message.o: src/Message.cpp.o
@@ -206,7 +228,8 @@ src/Message.o: src/Message.cpp.o
 
 # target to build an object file
 src/Message.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/Message.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/Message.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/Message.cpp.o
 .PHONY : src/Message.cpp.o
 
 src/Message.i: src/Message.cpp.i
@@ -214,7 +237,8 @@ src/Message.i: src/Message.cpp.i
 
 # target to preprocess a source file
 src/Message.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/Message.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/Message.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/Message.cpp.i
 .PHONY : src/Message.cpp.i
 
 src/Message.s: src/Message.cpp.s
@@ -222,7 +246,8 @@ src/Message.s: src/Message.cpp.s
 
 # target to generate assembly for a file
 src/Message.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/Message.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/Message.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/Message.cpp.s
 .PHONY : src/Message.cpp.s
 
 src/User.o: src/User.cpp.o
@@ -230,7 +255,8 @@ src/User.o: src/User.cpp.o
 
 # target to build an object file
 src/User.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/User.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/User.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/User.cpp.o
 .PHONY : src/User.cpp.o
 
 src/User.i: src/User.cpp.i
@@ -238,7 +264,8 @@ src/User.i: src/User.cpp.i
 
 # target to preprocess a source file
 src/User.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/User.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/User.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/User.cpp.i
 .PHONY : src/User.cpp.i
 
 src/User.s: src/User.cpp.s
@@ -246,32 +273,57 @@ src/User.s: src/User.cpp.s
 
 # target to generate assembly for a file
 src/User.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/User.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/User.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/User.cpp.s
 .PHONY : src/User.cpp.s
 
-src/main.o: src/main.cpp.o
-.PHONY : src/main.o
+src/client.o: src/client.cpp.o
+.PHONY : src/client.o
 
 # target to build an object file
-src/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/main.cpp.o
-.PHONY : src/main.cpp.o
+src/client.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.o
+.PHONY : src/client.cpp.o
 
-src/main.i: src/main.cpp.i
-.PHONY : src/main.i
+src/client.i: src/client.cpp.i
+.PHONY : src/client.i
 
 # target to preprocess a source file
-src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/main.cpp.i
-.PHONY : src/main.cpp.i
+src/client.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.i
+.PHONY : src/client.cpp.i
 
-src/main.s: src/main.cpp.s
-.PHONY : src/main.s
+src/client.s: src/client.cpp.s
+.PHONY : src/client.s
 
 # target to generate assembly for a file
-src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/src/main.cpp.s
-.PHONY : src/main.cpp.s
+src/client.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.s
+.PHONY : src/client.cpp.s
+
+src/server.o: src/server.cpp.o
+.PHONY : src/server.o
+
+# target to build an object file
+src/server.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/server.cpp.o
+.PHONY : src/server.cpp.o
+
+src/server.i: src/server.cpp.i
+.PHONY : src/server.i
+
+# target to preprocess a source file
+src/server.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/server.cpp.i
+.PHONY : src/server.cpp.i
+
+src/server.s: src/server.cpp.s
+.PHONY : src/server.s
+
+# target to generate assembly for a file
+src/server.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/server.cpp.s
+.PHONY : src/server.cpp.s
 
 # Help Target
 help:
@@ -281,7 +333,8 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... ChatRoom"
+	@echo "... client"
+	@echo "... server"
 	@echo "... src/ChatRoom.o"
 	@echo "... src/ChatRoom.i"
 	@echo "... src/ChatRoom.s"
@@ -297,9 +350,12 @@ help:
 	@echo "... src/User.o"
 	@echo "... src/User.i"
 	@echo "... src/User.s"
-	@echo "... src/main.o"
-	@echo "... src/main.i"
-	@echo "... src/main.s"
+	@echo "... src/client.o"
+	@echo "... src/client.i"
+	@echo "... src/client.s"
+	@echo "... src/server.o"
+	@echo "... src/server.i"
+	@echo "... src/server.s"
 .PHONY : help
 
 

@@ -1,4 +1,4 @@
-# Install script for directory: /Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project
+# Install script for directory: /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

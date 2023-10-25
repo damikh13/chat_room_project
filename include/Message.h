@@ -1,6 +1,8 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include <string>
+
 /*
 A class to represent chat messages, including
     * message content
@@ -11,9 +13,17 @@ A class to represent chat messages, including
 class Message
 {
 private:
-    /* data */
+    std::string content;
+    std::string sender;
+    std::string timestamp;
+    bool valid;
 public:
-    Message(/* args */);
+    Message(
+        const std::string& content,
+        const std::string& sender,
+        const std::string& timestamp,
+        bool valid
+    );
     ~Message();
 };
 

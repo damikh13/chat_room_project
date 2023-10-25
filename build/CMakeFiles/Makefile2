@@ -54,16 +54,17 @@ RM = /opt/homebrew/Cellar/cmake/3.27.7/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project"
+CMAKE_SOURCE_DIR = /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build"
+CMAKE_BINARY_DIR = /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build
 
 #=============================================================================
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/ChatRoom.dir/all
+all: CMakeFiles/server.dir/all
+all: CMakeFiles/client.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -71,34 +72,61 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/ChatRoom.dir/clean
+clean: CMakeFiles/server.dir/clean
+clean: CMakeFiles/client.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/ChatRoom.dir
+# Target rules for target CMakeFiles/server.dir
 
 # All Build rule for target.
-CMakeFiles/ChatRoom.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles" --progress-num=1,2,3,4,5,6,7 "Built target ChatRoom"
-.PHONY : CMakeFiles/ChatRoom.dir/all
+CMakeFiles/server.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles --progress-num=8,9,10,11,12,13,14 "Built target server"
+.PHONY : CMakeFiles/server.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/ChatRoom.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles" 7
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/ChatRoom.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles" 0
-.PHONY : CMakeFiles/ChatRoom.dir/rule
+CMakeFiles/server.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles 7
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/server.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles 0
+.PHONY : CMakeFiles/server.dir/rule
 
 # Convenience name for target.
-ChatRoom: CMakeFiles/ChatRoom.dir/rule
-.PHONY : ChatRoom
+server: CMakeFiles/server.dir/rule
+.PHONY : server
 
 # clean rule for target.
-CMakeFiles/ChatRoom.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChatRoom.dir/build.make CMakeFiles/ChatRoom.dir/clean
-.PHONY : CMakeFiles/ChatRoom.dir/clean
+CMakeFiles/server.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/clean
+.PHONY : CMakeFiles/server.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/client.dir
+
+# All Build rule for target.
+CMakeFiles/client.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target client"
+.PHONY : CMakeFiles/client.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/client.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles 7
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/client.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles 0
+.PHONY : CMakeFiles/client.dir/rule
+
+# Convenience name for target.
+client: CMakeFiles/client.dir/rule
+.PHONY : client
+
+# clean rule for target.
+CMakeFiles/client.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/clean
+.PHONY : CMakeFiles/client.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
