@@ -1,0 +1,3 @@
+/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles/ChatRoom.dir
+/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles/edit_cache.dir
+/Users/damikh13/Documents/University/year 2/sem1/Computer Science/chat_room_project/build/CMakeFiles/rebuild_cache.dir
