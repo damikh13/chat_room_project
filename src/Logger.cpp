@@ -3,16 +3,15 @@
 
 #include "Logger.h"
 
-Logger::Logger(log_level logLevel, const std::string& name_of_who_is_logging)
+Logger::Logger(const std::string& file_path, log_level logLevel)
 {
-    log_file.open("log.txt", std::ios_base::app);
+    log_file.open(file_path);
     if (!log_file.is_open())
     {
         std::cerr << "Error opening log file" << std::endl;
     }
     log(log_level::INFO, "Logger started");
     current_log_level = logLevel;
-    who_is_logging = name_of_who_is_logging;
 }
 
 Logger::~Logger()
@@ -35,12 +34,16 @@ void Logger::log(log_level level, const std::string& message)
         << " ["
         << log_level_to_string[level]
         << "] "
-        << " by ["
-        << who_is_logging
-        << "]"
         << message
         << std::endl;
-    // }
+    // std::cout <<
+    //     get_current_time()
+    //     << " ["
+    //     << log_level_to_string[level]
+    //     << "] "
+    //     << message
+    //     << std::endl;
+// }
 }
 
 std::string Logger::get_current_time()
