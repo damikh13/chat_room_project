@@ -1,3 +1,6 @@
+#ifndef TSQUEUE_H
+#define TSQUEUE_H
+
 #include <condition_variable> 
 #include <mutex> 
 #include <queue> 
@@ -57,3 +60,5 @@ public:
         return m_queue.empty();
     }
 };
+
+#endif // !TSQUEUE_H
