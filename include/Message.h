@@ -2,29 +2,38 @@
 #define MESSAGE_H
 
 #include <string>
+#include <chrono>
 
+// TODO: add validation
 /*
 A class to represent chat messages, including
     * message content
     * sender
     * timestamp
-    * validation.
 */
 class Message
 {
-private:
-    std::string content;
-    std::string sender;
-    std::string timestamp;
-    bool valid;
 public:
+    // Default constructor
     Message(
         const std::string& content,
-        const std::string& sender,
-        const std::string& timestamp,
-        bool valid
+        const std::string& sender
     );
+
+    // Getters for message properties
+    std::string get_sender() const;
+    std::string get_content() const;
+    // std::string get_timestamp() const;
+    std::chrono::system_clock::time_point get_timestamp() const;
+
+    std::string to_string() const;
+
     ~Message();
+private:
+    std::string sender;
+    std::string content;
+    // std::string timestamp;
+    std::chrono::system_clock::time_point timestamp;
 };
 
 #endif // !MESSAGE_H
