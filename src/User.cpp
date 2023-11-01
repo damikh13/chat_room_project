@@ -1,14 +1,16 @@
 #include "User.h"
-#include <iostream>
 
-// Default constructor
-User::User(/* args */)
+User::User() {}
+
+User::User(const std::string& name, const std::string& password)
+    : username(name), password(password) {}
+
+std::string User::get_username() const
 {
-    std::cout << "User constructor()" << std::endl;
+    return username;
 }
 
-// Default destructor
-User::~User()
+std::string User::get_password() const
 {
-    std::cout << "User destructor()" << std::endl;
+    return password;
 }

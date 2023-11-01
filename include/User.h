@@ -1,6 +1,8 @@
 #ifndef USER_H
 #define USER_H
 
+#include <string>
+
 /*
 This class represents a user in the chat room.
 It should handle user authorization (username and password)
@@ -8,11 +10,20 @@ It should handle user authorization (username and password)
 */
 class User
 {
-private:
-    /* data */
 public:
-    User(/* args */);
-    ~User();
+    // Default constructor
+    User();
+
+    // Constructor with username and password
+    User(const std::string& name, const std::string& password);
+
+    // Getters for user properties
+    std::string get_username() const;
+    std::string get_password() const;
+
+private:
+    std::string username;
+    std::string password;
 };
 
 #endif // !USER_H
