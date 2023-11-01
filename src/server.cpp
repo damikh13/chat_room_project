@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 #include <algorithm>
+#include <map>
 
 // HEADER FILES
 #include "ChatRoom.h"
@@ -17,12 +18,33 @@
 #include "TSQueue.h"
 
 const int MAX_CLIENTS = 5;
+const int PORT_NUMBER = 8080;
+const int BUFFER_SIZE = 1024; // TODO: change to this instead of sizeof(recv_buffer)
+
+// Function to receive data from a client socket
+bool receive_data(int client_socket, char* buffer, size_t buffer_size, std::string& received_data, Logger& logger)
+{
+    memset(buffer, 0, buffer_size);
+    int bytes_read = recv(client_socket, buffer, buffer_size, 0);
+    if (bytes_read == -1)
+    {
+        logger.log(Logger::log_level::ERROR, "Error receiving data from client");
+        return false;
+    }
+    if (bytes_read == 0)
+    {
+        // Connection closed by the client or no data received
+        return false;
+    }
+    received_data = std::string(buffer, bytes_read);
+    return true;
+}
 
 int main()
 {
     // ---------------------------------------------------------------------------
     // LOGGING
-    Logger logger(Logger::log_level::DEBUG, "server");
+    Logger logger("server.log", Logger::log_level::DEBUG);
     // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
@@ -42,7 +64,7 @@ int main()
     logger.log(Logger::log_level::DEBUG, "Binding server socket...");
     struct sockaddr_in server_address_info; // Set up the server address structure
     server_address_info.sin_family = AF_INET;
-    server_address_info.sin_port = htons(2025);  // Port number
+    server_address_info.sin_port = htons(PORT_NUMBER);  // Port number
     server_address_info.sin_addr.s_addr = INADDR_ANY;
     int bind_result = bind(
         server_socket,
@@ -73,13 +95,14 @@ int main()
 
     // ---------------------------------------------------------------------------
     // MAIN SERVER LOOP
-    // Create thread-safe queues for input and output messages
-    TSQueue<std::string> input_queue; // for server input and client messages
-    TSQueue<std::string> output_queue; // for server output
+    TSQueue<Message> input_queue; // for server input (e.g., commands)
+    TSQueue<Message> output_queue; // for server output (e.g., messages to clients)
 
     std::vector<int> client_sockets; // to store client sockets
+    std::map<int, User> connected_clients; // to store connected clients (key: socket, value: User object)
 
     // Input thread (for server input, e.g., commands)
+    // TODO: remove this thread and use the main thread instead?
     std::thread input_thread([&input_queue, &logger]()
         {
             std::string server_input;
@@ -88,40 +111,50 @@ int main()
                 // Read server commands or other input and push them to the input_queue
                 std::getline(std::cin, server_input);
                 logger.log(Logger::log_level::DEBUG, "Server input: " + server_input);
-                input_queue.push(server_input);
+                Message server_message(server_input, "server");
+                input_queue.push(server_message);
             }
         }
     );
-    // TODO: need to join this thread? or detach it? or something else?
+    input_thread.detach(); // TODO: need to detach this thread?
 
-    // Create a thread for broadcasting messages to clients
-    std::thread broadcast_thread([&input_queue, &client_sockets, &logger]()
+    // Output thread (for broadcasting messages to clients)
+    std::thread output_thread([&output_queue, &connected_clients, &logger]()
         {
             while (true)
             {
-                if (!input_queue.empty())
+                if (!output_queue.empty())
                 {
-                    std::string message = input_queue.pop();
-                    logger.log(Logger::log_level::DEBUG, "Broadcasting message: " + message + "...");
+                    Message message = output_queue.pop();
+                    logger.log(Logger::log_level::DEBUG, "Broadcasting message: " + message.to_string() + "...");
 
-                    // Broadcast the message to all connected clients
-                    for (int socket : client_sockets)
+                    for (const auto& client : connected_clients)
                     {
+                        // check if the client that sent the message is the same as the client we're broadcasting to
+                        // if so, skip this client
+                        bool same_client = (client.second.get_username() == message.get_sender());
+                        if (client.second.get_username() == message.get_sender())
+                        {
+                            continue;
+                        }
+
                         bool send_success = (send(
-                            socket,
-                            message.c_str(),
-                            message.size(),
+                            client.first,
+                            message.to_string().c_str(),
+                            message.to_string().size(),
                             0) != -1);
                         if (!send_success)
                         {
                             logger.log(Logger::log_level::ERROR, "Error sending data to client");
                         }
-                        logger.log(Logger::log_level::DEBUG, "...Message broadcasted to client " + std::to_string(socket));
+                        logger.log(Logger::log_level::DEBUG, "...Message broadcasted to client " + std::to_string(client.first));
                     }
                 }
             }
         });
+    output_thread.detach(); // detach the output thread so it can run independently
 
+    // std::map<int, User> connected_clients; // to store connected clients (key: socket, value: User object)
     while (true) // Accept incoming connections
     {
         sockaddr_in client_address_info;
@@ -135,56 +168,43 @@ int main()
         if (!accept_result)
         {
             logger.log(Logger::log_level::ERROR, "Error accepting client connection");
-            std::cout << "Client connecting failed" << std::endl;
             continue;
         }
-        std::cout << "Client connected" << std::endl;
-        logger.log(Logger::log_level::DEBUG, "...Client connection accepted");
 
-        client_sockets.push_back(client_socket);
+        std::string credentials;
+        char recv_buffer[BUFFER_SIZE];
+        bool credentials_received = receive_data(client_socket, recv_buffer, sizeof(recv_buffer), credentials, logger);
+        // divide credentials into username and password, format: 'username:password'
+        std::string username = credentials.substr(0, credentials.find(':'));
+        std::string password = credentials.substr(credentials.find(':') + 1);
+        connected_clients[client_socket] = User(username, password);
+        logger.log(Logger::log_level::DEBUG, "Client connected: " + username + ":" + password);
 
         logger.log(Logger::log_level::DEBUG, "Creating client thread...");
         // Create a thread for each client
-        // Received client messages will be pushed to the input_queue
-        std::thread client_thread([client_socket, &input_queue, &output_queue, &logger]()
+        // Received client messages will be pushed to the output_queue
+        std::thread client_thread([client_socket, &output_queue, &logger, &connected_clients]()
             {
-                char recv_buffer[1024];
+                char recv_buffer[BUFFER_SIZE];
                 size_t recv_buffer_size = sizeof(recv_buffer);
-                memset(recv_buffer, 0, recv_buffer_size);
+                std::string message_content;
                 while (true)
                 {
-                    int bytes_read = recv(client_socket, recv_buffer, sizeof(recv_buffer), 0);
-                    bool recv_success = (bytes_read != -1);
-                    if (!recv_success)
+                    bool message_received = receive_data(client_socket, recv_buffer, recv_buffer_size, message_content, logger);
+                    if (!message_received) // TODO: handle this better
                     {
-                        logger.log(Logger::log_level::ERROR, "Error receiving data from client");
-                        break;
+                        // logger.log(Logger::log_level::DEBUG, "Client disconnected");
+                        // break;
                     }
-                    bool message_empty = (bytes_read == 0);
-                    if (!message_empty)
-                    {
-                        // TODO: use Message class
-                        logger.log(Logger::log_level::DEBUG,
-                            "Received client message: \""
-                            + std::string(recv_buffer, bytes_read)
-                            + "\""
-                        );
+                    logger.log(Logger::log_level::DEBUG, "Received message from client: " + message_content);
+                    Message message(message_content, connected_clients[client_socket].get_username());
 
-                        std::string client_message(recv_buffer, bytes_read);
-                        input_queue.push(client_message); // Push client messages to the input_queue
-
-                        logger.log(Logger::log_level::DEBUG,
-                            "...Pushed client message: \""
-                            + client_message
-                            + "\" to input_queue"
-                        );
-                    }
+                    output_queue.push(message);
                 }
             }
         );
         client_thread.detach(); // detach the client thread so it can run independently
     }
-
 
     // Close the server socket and join the input thread
     close(server_socket);

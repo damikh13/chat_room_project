@@ -15,6 +15,33 @@
 #include "User.h"
 #include "TSQueue.h"
 
+const int PORT_NUMBER = 8080;
+const int BUFFER_SIZE = 1024;
+
+// Function to send data to the server
+bool send_data(int client_socket, const std::string& data, Logger& logger)
+{
+    logger.log(
+        Logger::log_level::DEBUG,
+        "Sending data to server: \"" + data + "\""
+    );
+
+    int bytes_sent = send(
+        client_socket,
+        data.c_str(),
+        data.size(),
+        0
+    );
+
+    bool send_success = (bytes_sent != -1);
+    if (!send_success)
+    {
+        logger.log(Logger::log_level::ERROR, "Error sending data to server");
+    }
+
+    return send_success;
+}
+
 int main()
 {
     // ---------------------------------------------------------------------------
@@ -25,11 +52,13 @@ int main()
     std::getline(std::cin, username);
     std::cout << "Enter password: ";
     std::getline(std::cin, password);
+    std::string credentials = username + ":" + password;
     // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
     // LOGGING
-    Logger logger(Logger::log_level::DEBUG, username);
+    // Logger logger(Logger::log_level::DEBUG, username);
+    Logger logger(username + ".log", Logger::log_level::DEBUG);
     // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
@@ -42,12 +71,19 @@ int main()
         logger.log(Logger::log_level::ERROR, "Error creating client socket");
         return 1;
     }
+
+    timeval read_timeout;
+    read_timeout.tv_sec = 0;
+    read_timeout.tv_usec = 10;
+    setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof(read_timeout));
+
+
     // Set up the server address structure
     struct sockaddr_in server_address_info;
     server_address_info.sin_family = AF_INET;
-    server_address_info.sin_port = htons(2025);
-    server_address_info.sin_addr.s_addr = inet_addr("127.0.0.1");  // Replace with your server's IP
-    inet_pton(AF_INET, "127.0.0.1", &server_address_info.sin_addr);  // Server's IP address
+    server_address_info.sin_port = htons(PORT_NUMBER);
+    server_address_info.sin_addr.s_addr = inet_addr("127.0.0.1");
+    inet_pton(AF_INET, "127.0.0.1", &server_address_info.sin_addr);
 
     int connect_result = connect(
         client_socket,
@@ -63,15 +99,19 @@ int main()
     }
     else
     {
-        std::cout << "Connected to server" << std::endl;
         logger.log(Logger::log_level::DEBUG, "Connected to server");
     }
     // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
+    // AUTHORIZATION
+    // Send username and password to server
+    bool credentials_sent = send_data(client_socket, credentials, logger);
+    // ---------------------------------------------------------------------------
+
     // MESSAGE HANDLING
     // Allocate a buffer to store the server's response
-    char buffer[1024];
+    char buffer[BUFFER_SIZE];
     memset(buffer, 0, sizeof(buffer));
 
     // Create thread-safe queues for input and output messages
@@ -79,12 +119,21 @@ int main()
     TSQueue<std::string> output_queue; // for server messages
 
     // Input thread
-    std::thread input_thread([&input_queue, &logger]()
+    bool disconnect = false;
+    std::thread input_thread([&input_queue, &logger, &disconnect]()
         {
             std::string user_input;
             while (true)
             {
                 std::getline(std::cin, user_input);
+
+                if (user_input == "exit")
+                {
+                    // TODO: send exit message to server
+                    disconnect = true;
+                    break;
+                }
+
                 input_queue.push(user_input);
                 logger.log(Logger::log_level::DEBUG, "Pushed user input \"" + user_input + "\" to input_queue");
             }
@@ -94,6 +143,11 @@ int main()
     // Main client logic
     while (true)
     {
+        if (disconnect)
+        {
+            break;
+        }
+
         // Check for user input and send it
         bool input_available = !input_queue.empty();
         if (input_available)
@@ -105,24 +159,17 @@ int main()
                 + user_input
                 + "\" from input_queue, sending to server..."
             );
-            bool message_sent = (send(
-                client_socket,
-                user_input.c_str(),
-                user_input.size(),
-                0
-            ) != -1);
-            if (!message_sent)
+
+            bool message_sent = send_data(client_socket, user_input, logger);
+            if (message_sent)
             {
-                logger.log(Logger::log_level::ERROR, "Error sending data");
-                break;
+                logger.log(Logger::log_level::DEBUG, "...Sent user input to server");
             }
-            logger.log(Logger::log_level::DEBUG, "...Sent user input to server");
         }
 
         // Check for server messages
-        char recv_buffer[1024];
+        char recv_buffer[BUFFER_SIZE];
         memset(recv_buffer, 0, sizeof(recv_buffer));
-        // logger.log(Logger::log_level::DEBUG, "Receiving message from server...");
         int bytes_read = recv(
             client_socket, // socket
             recv_buffer, // where to store the data
@@ -130,10 +177,10 @@ int main()
             0 // flags
         );
         bool recv_success = (bytes_read != -1);
-        if (!recv_success)
+        if (!recv_success) // TODO: handle this better
         {
-            logger.log(Logger::log_level::ERROR, "Error receiving data from server");
-            break;
+            // logger.log(Logger::log_level::ERROR, "Error receiving data from server");
+            // break;
         }
         else if (bytes_read > 0)
         {
@@ -152,7 +199,7 @@ int main()
         while (!output_queue.empty())
         {
             std::string message = output_queue.pop();
-            std::cout << "Received from server: " << message << std::endl;
+            std::cout << message << std::endl;
             logger.log(Logger::log_level::DEBUG, "Displayed message from server: " + message);
         }
     }
