@@ -23,8 +23,11 @@ public:
     // Getters for message properties
     std::string get_sender() const;
     std::string get_content() const;
-    // std::string get_timestamp() const;
     std::chrono::system_clock::time_point get_timestamp() const;
+
+    // Setters for message properties
+    void set_sender(const std::string& sender);
+    void set_content(const std::string& content);
 
     std::string to_string() const;
 

@@ -56,6 +56,16 @@ std::string Message::to_string() const
     return timestamp_str.str() + " [" + sender + "]: " + content;
 }
 
+// Setters for message properties
+void Message::set_sender(const std::string& sender)
+{
+    this->sender = sender;
+}
+void Message::set_content(const std::string& content)
+{
+    this->content = content;
+}
+
 // Default destructor
 Message::~Message()
 {
