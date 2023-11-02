@@ -193,7 +193,8 @@ int main()
         }
         else if (credentials_bytes == -1)
         {
-            logger.log(Logger::log_level::ERROR, "Error receiving credenttials from client");
+            // TODO: won't this be logged infinitely?
+            logger.log(Logger::log_level::ERROR, "Error receiving credentials from client");
         }
 
         // divide credentials into username and password, format: 'username:password'
@@ -201,6 +202,8 @@ int main()
         std::string password = credentials.substr(credentials.find(':') + 1);
         connected_clients[client_socket] = User(username, password);
         logger.log(Logger::log_level::DEBUG, "Client connected: " + username + ":" + password);
+        Message message("Client [" + username + "] connected.", "server");
+        output_queue.push(message);
 
         logger.log(Logger::log_level::DEBUG, "Creating client thread...");
         // Create a thread for each client
@@ -216,7 +219,7 @@ int main()
 
                     // Check if the client disconnected
                     // it's either if the received message is empty or if the received message is 'exit'
-                    bool client_disconnected = (message_content.empty() || message_content == "exit");
+                    bool client_disconnected = (received_message_bytes == 0 || message_content == "exit");
 
                     if (client_disconnected)
                     {
@@ -226,9 +229,8 @@ int main()
                         break;
                     }
                     else if (received_message_bytes == -1)
-                    { // TODO: do nothing?
-                        // logger.log(Logger::log_level::ERROR, "Error receiving data from client");
-                        // break;
+                    {
+                        continue;
                     }
 
                     logger.log(Logger::log_level::DEBUG, "Received message from client: " + message_content);
