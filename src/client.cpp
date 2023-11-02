@@ -127,10 +127,17 @@ int main()
             {
                 std::getline(std::cin, user_input);
 
+                if (user_input.empty())
+                {
+                    std::cout << "Message cannot be empty" << std::endl;
+                    continue;
+                }
+
                 if (user_input == "exit")
                 {
-                    // TODO: send exit message to server
                     disconnect = true;
+                    input_queue.push(user_input);
+                    logger.log(Logger::log_level::DEBUG, "Pushed user input \"" + user_input + "\" to input_queue");
                     break;
                 }
 
@@ -143,11 +150,6 @@ int main()
     // Main client logic
     while (true)
     {
-        if (disconnect)
-        {
-            break;
-        }
-
         // Check for user input and send it
         bool input_available = !input_queue.empty();
         if (input_available)
@@ -164,6 +166,10 @@ int main()
             if (message_sent)
             {
                 logger.log(Logger::log_level::DEBUG, "...Sent user input to server");
+            }
+            if (disconnect)
+            {
+                break;
             }
         }
 

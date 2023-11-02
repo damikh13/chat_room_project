@@ -22,22 +22,15 @@ const int PORT_NUMBER = 8080;
 const int BUFFER_SIZE = 1024; // TODO: change to this instead of sizeof(recv_buffer)
 
 // Function to receive data from a client socket
-bool receive_data(int client_socket, char* buffer, size_t buffer_size, std::string& received_data, Logger& logger)
+int receive_data(int client_socket, char* buffer, size_t buffer_size, std::string& received_data, Logger& logger)
 {
     memset(buffer, 0, buffer_size);
     int bytes_read = recv(client_socket, buffer, buffer_size, 0);
-    if (bytes_read == -1)
+    if (bytes_read > 0) // TODO: handle this better
     {
-        logger.log(Logger::log_level::ERROR, "Error receiving data from client");
-        return false;
+        received_data = std::string(buffer, bytes_read);
     }
-    if (bytes_read == 0)
-    {
-        // Connection closed by the client or no data received
-        return false;
-    }
-    received_data = std::string(buffer, bytes_read);
-    return true;
+    return bytes_read;
 }
 
 int main()
@@ -126,6 +119,26 @@ int main()
                 if (!output_queue.empty())
                 {
                     Message message = output_queue.pop();
+
+                    // Check if the message is an exit message
+                    bool client_disconnected = (message.get_content() == "exit");
+                    if (client_disconnected)
+                    {
+                        // Message is an exit message, so remove the client from the connected_clients map
+                        auto it = std::find_if(connected_clients.begin(), connected_clients.end(),
+                            [&message](const std::pair<int, User>& client)
+                            {
+                                return client.second.get_username() == message.get_sender();
+                            });
+
+                        if (it != connected_clients.end())
+                        {
+                            connected_clients.erase(it);
+                        }
+
+                        message.set_content("Client [" + message.get_sender() + "] disconnected.");
+                        message.set_sender("server");
+                    }
                     logger.log(Logger::log_level::DEBUG, "Broadcasting message: " + message.to_string() + "...");
 
                     for (const auto& client : connected_clients)
@@ -173,7 +186,16 @@ int main()
 
         std::string credentials;
         char recv_buffer[BUFFER_SIZE];
-        bool credentials_received = receive_data(client_socket, recv_buffer, sizeof(recv_buffer), credentials, logger);
+        int credentials_bytes = receive_data(client_socket, recv_buffer, sizeof(recv_buffer), credentials, logger);
+        if (credentials_bytes == 0)
+        {
+            logger.log(Logger::log_level::ERROR, "Client disconnected");
+        }
+        else if (credentials_bytes == -1)
+        {
+            logger.log(Logger::log_level::ERROR, "Error receiving credenttials from client");
+        }
+
         // divide credentials into username and password, format: 'username:password'
         std::string username = credentials.substr(0, credentials.find(':'));
         std::string password = credentials.substr(credentials.find(':') + 1);
@@ -190,12 +212,25 @@ int main()
                 std::string message_content;
                 while (true)
                 {
-                    bool message_received = receive_data(client_socket, recv_buffer, recv_buffer_size, message_content, logger);
-                    if (!message_received) // TODO: handle this better
+                    int received_message_bytes = receive_data(client_socket, recv_buffer, recv_buffer_size, message_content, logger);
+
+                    // Check if the client disconnected
+                    // it's either if the received message is empty or if the received message is 'exit'
+                    bool client_disconnected = (message_content.empty() || message_content == "exit");
+
+                    if (client_disconnected)
                     {
-                        // logger.log(Logger::log_level::DEBUG, "Client disconnected");
+                        logger.log(Logger::log_level::ERROR, "Client disconnected");
+                        Message message("exit", connected_clients[client_socket].get_username());
+                        output_queue.push(message);
+                        break;
+                    }
+                    else if (received_message_bytes == -1)
+                    { // TODO: do nothing?
+                        // logger.log(Logger::log_level::ERROR, "Error receiving data from client");
                         // break;
                     }
+
                     logger.log(Logger::log_level::DEBUG, "Received message from client: " + message_content);
                     Message message(message_content, connected_clients[client_socket].get_username());
 
