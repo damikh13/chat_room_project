@@ -129,7 +129,7 @@ int main()
 
                 if (user_input.empty())
                 {
-                    std::cout << "Message cannot be empty" << std::endl;
+                    std::cout << "Message cannot be empty. Please, try again" << std::endl;
                     continue;
                 }
 
