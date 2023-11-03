@@ -16,10 +16,6 @@
 #include "User.h"
 #include "TSQueue.h"
 
-const int PORT_NUMBER = 2048;
-const int BUFFER_SIZE = 1024;
-const int CHAT_HISTORY_SIZE = 3; // TODO: make this configurable
-
 // Function to send data to the server
 bool send_data(int client_socket, const std::string& data, Logger& logger)
 {
@@ -72,62 +68,155 @@ bool is_valid_message(const std::string& message)
     return is_valid_length && contains_only_valid_characters && proper_ending;
 }
 
-int main()
+// CONNECTION HELPERS
+inline int create_client_socket(Logger& logger)
 {
-    // Create thread-safe queues for input and output messages
-    TSQueue<std::string> input_queue; // for user input
-    TSQueue<std::string> output_queue; // for server messages
-
-    std::string username; // TODO: make this configurable
-    std::cout << "Enter username: ";
-    std::getline(std::cin, username);
-
-    // ---------------------------------------------------------------------------
-    // LOGGING
-    // Logger logger(Logger::log_level::DEBUG, username);
-    Logger logger(username + ".log", Logger::log_level::DEBUG);
-    // ---------------------------------------------------------------------------
-
-    // ---------------------------------------------------------------------------
-    // CONNECTION
-    // Create a client socket
     int client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    bool socket_created = (client_socket != -1);
-    if (!socket_created)
+    if (client_socket == -1)
     {
         logger.log(Logger::log_level::ERROR, "Error creating client socket");
-        return 1;
     }
-
-    timeval read_timeout;
+    return client_socket;
+}
+inline void set_read_timeout(int client_socket, timeval& read_timeout)
+{
     read_timeout.tv_sec = 0;
     read_timeout.tv_usec = 10;
     setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof(read_timeout));
-
-    // Set up the server address structure
-    struct sockaddr_in server_address_info;
+}
+inline sockaddr_in setup_server_address_info(const int& PORT_NUMBER, const std::string& IP_ADDRESS)
+{
+    sockaddr_in server_address_info;
     server_address_info.sin_family = AF_INET;
     server_address_info.sin_port = htons(PORT_NUMBER);
-    server_address_info.sin_addr.s_addr = inet_addr("127.0.0.1");
-    inet_pton(AF_INET, "127.0.0.1", &server_address_info.sin_addr);
-
-    int connect_result = connect(
-        client_socket,
-        (struct sockaddr*)&server_address_info,
-        sizeof(server_address_info)
-    );
-    bool connect_success = (connect_result != -1);
-    if (!connect_success)
+    server_address_info.sin_addr.s_addr = inet_addr(IP_ADDRESS.c_str());
+    inet_pton(AF_INET, IP_ADDRESS.c_str(), &server_address_info.sin_addr);
+    return server_address_info;
+}
+inline bool connect_to_server(int client_socket, sockaddr_in& server_address_info, Logger& logger)
+{
+    int connect_result = connect(client_socket, (struct sockaddr*)&server_address_info, sizeof(server_address_info));
+    if (connect_result == -1)
     {
         logger.log(Logger::log_level::ERROR, "Error connecting to the server");
         close(client_socket);
-        return 1;
+        return false;
     }
     else
     {
         logger.log(Logger::log_level::DEBUG, "Connected to server");
+        return true;
+    }
+}
+
+// AUTHORIZATION HELPERS
+inline std::string get_user_input()
+{
+    std::string input;
+    std::getline(std::cin, input);
+    return input;
+}
+inline std::string create_handshake_message(const std::string& user_type, const std::string& username, const std::string& password, int chat_history_size)
+{
+    return user_type + ":" + username + ":" + password + ":" + std::to_string(chat_history_size);
+}
+inline void send_handshake_message(int client_socket, const std::string& handshake_message, Logger& logger)
+{
+    send_data(client_socket, handshake_message, logger);
+    logger.log(Logger::log_level::DEBUG, "Sent handshake message to server");
+}
+inline std::string receive_server_response(int client_socket, Logger& logger, const int& BUFFER_SIZE)
+{
+    char recv_buffer[BUFFER_SIZE];
+    memset(recv_buffer, 0, sizeof(recv_buffer));
+    int bytes_read = recv(client_socket, recv_buffer, sizeof(recv_buffer), 0);
+    if (bytes_read > 0)
+    {
+        return std::string(recv_buffer, bytes_read - 1); // skip ';' delimiter
+    }
+    else
+    {
+        logger.log(Logger::log_level::ERROR, "Error receiving data from server");
+        return "";
+    }
+}
+inline bool handle_server_response(const std::string& server_message, int client_socket)
+{
+    if (server_message.find("User exists. Welcome back!") != std::string::npos)
+    {
+        return true;
+    }
+    else if (server_message.find("User does not exist. Please, try again.") != std::string::npos ||
+        server_message.find("Too many authentication attempts. Disconnecting...") != std::string::npos ||
+        server_message.find("Credentials already in use. Please, try again.") != std::string::npos)
+    {
+        std::cout << server_message << std::endl;
+        close(client_socket);
+        return false;
+    }
+    return false;
+}
+
+int main(int argc, char* argv[])
+{
+    // ---------------------------------------------------------------------------
+    // ARGUMENT PARSING
+    if (argc != 3)
+    {
+        std::cout << "Usage: " << argv[0] << " <config_file_path> <log_file_path>" << std::endl;
+        return 1;
+    }
+
+    std::string config_file_path(argv[1]);
+    std::string log_file_path(argv[2]);
+    // ---------------------------------------------------------------------------
+
+    // ---------------------------------------------------------------------------
+    // LOGGING
+    Logger logger(log_file_path, Logger::log_level::DEBUG);
+    // ---------------------------------------------------------------------------
+
+    // ---------------------------------------------------------------------------
+    // CONFIG PARSING
+    ConfigParser config_parser(config_file_path, logger);
+    std::string username = config_parser.get_string("USERNAME");                // Username
+    const int PORT_NUMBER = config_parser.get_int("PORT_NUMBER");               // Port number
+    const int BUFFER_SIZE = config_parser.get_int("BUFFER_SIZE");               // Size of the buffer for receiving data from the server
+    const int CHAT_HISTORY_SIZE = config_parser.get_int("CHAT_HISTORY_SIZE");   // Number of messages to display when a user joins the chat
+    const std::string IP_ADDRESS = config_parser.get_string("IP_ADDRESS");      // IP address of the server
+    // ---------------------------------------------------------------------------
+
+
+    // ---------------------------------------------------------------------------
+    // CONNECTION
+
+    // Create a client socket
+    int client_socket = create_client_socket(logger);
+    bool socket_created = (client_socket != -1);
+    if (!socket_created)
+    {
+        return 1;
+    }
+
+    // Set read timeout
+    timeval read_timeout;
+    set_read_timeout(client_socket, read_timeout);
+
+    // Set up the server address structure
+    sockaddr_in server_address_info = setup_server_address_info(PORT_NUMBER, IP_ADDRESS);
+
+    // Connect to the server
+    bool connected_to_server = connect_to_server(client_socket, server_address_info, logger);
+    if (!connected_to_server)
+    {
+        return 1;
     }
     // ---------------------------------------------------------------------------
+
+
+    // Create thread-safe queues for input and output messages
+    TSQueue<std::string> input_queue; // for user input
+    TSQueue<std::string> output_queue; // for server messages
 
     // ---------------------------------------------------------------------------
     // AUTHORIZATION
@@ -164,7 +253,7 @@ int main()
                 handshake_message = "existing_user:" + username + ":" + password_attempt + ":" + std::to_string(CHAT_HISTORY_SIZE);
                 logger.log(Logger::log_level::DEBUG, "Sending handshake message to server...");
                 send_data(client_socket, handshake_message, logger);
-                usleep(100000);
+                usleep(100000); // TODO: just commented this out, but it might be needed
                 logger.log(Logger::log_level::DEBUG, "Waiting for server response...");
                 char recv_buffer[BUFFER_SIZE];
                 memset(recv_buffer, 0, sizeof(recv_buffer));
