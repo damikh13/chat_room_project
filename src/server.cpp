@@ -12,18 +12,18 @@
 #include <sstream>
 
 // HEADER FILES
+#include "Logger.h"
 #include "ChatRoom.h"
 #include "ConfigParser.h"
-#include "Logger.h"
 #include "Message.h"
 #include "User.h"
 #include "TSQueue.h"
 
-const int MAX_CLIENTS = 5;
-const int PORT_NUMBER = 2048; // TODO: put this in a 
-const size_t BUFFER_SIZE = 1024;
-const int MAX_HISTORY_SIZE = 10;
-const int NUM_AUTH_ATTEMPTS = 3; // TODO: make this configurable
+// const int MAX_CLIENTS = 5;
+// const int PORT_NUMBER = 2048; // TODO: put this in a 
+// const size_t BUFFER_SIZE = 1024;
+// const int MAX_HISTORY_SIZE = 10;
+// const int NUM_AUTH_ATTEMPTS = 3; // TODO: make this configurable
 
 // Function to receive data from a client socket
 int receive_data(int client_socket, char* buffer, size_t buffer_size, std::string& received_data, Logger& logger)
@@ -37,7 +37,7 @@ int receive_data(int client_socket, char* buffer, size_t buffer_size, std::strin
     return bytes_read;
 }
 
-inline void chat_history_push(std::deque<Message>& chat_history, const Message& message)
+inline void chat_history_push(std::deque<Message>& chat_history, const Message& message, int MAX_HISTORY_SIZE)
 {
     if (chat_history.size() == MAX_HISTORY_SIZE)
     {
@@ -66,17 +66,59 @@ void split(const std::string& string_to_split, char delimiter, std::vector<std::
     }
 }
 
-int main()
+// Function that removes client from connected_clients map
+void remove_client(int client_socket, std::map<int, User>& connected_clients)
+{
+    auto it = std::find_if(connected_clients.begin(), connected_clients.end(),
+        [&client_socket](const std::pair<int, User>& client)
+        {
+            return client.first == client_socket;
+        });
+    if (it != connected_clients.end())
+    {
+        connected_clients.erase(it);
+    }
+}
+
+int main(int argc, char* argv[])
 {
     // ---------------------------------------------------------------------------
-    // LOGGING
-    Logger logger("server.log", Logger::log_level::DEBUG);
+    // ARGUMENT PARSING
+    if (argc != 3)
+    {
+        std::cout << "Usage: " << argv[0] << " <config_file_path> <log_file_path>" << std::endl;
+        return 1;
+    }
+
+    std::string config_file_path(argv[1]);  // Path to the config file
+    std::string log_file_path(argv[2]);     // Path to the log file
     // ---------------------------------------------------------------------------
+
+
+    // ---------------------------------------------------------------------------
+    // LOGGING
+    Logger logger(log_file_path, Logger::log_level::DEBUG); // Create a logger object
+    // ---------------------------------------------------------------------------
+
+
+    // ---------------------------------------------------------------------------
+    // CONFIG PARSER
+    ConfigParser config_parser(config_file_path, logger);
+
+    const int MAX_CLIENTS = config_parser.get_int("MAX_CLIENTS");               // Maximum number of clients that can connect to the server simultaneously
+    const int PORT_NUMBER = config_parser.get_int("PORT_NUMBER");               // Port number
+    const size_t BUFFER_SIZE = config_parser.get_int("BUFFER_SIZE");            // Size of the buffer used to receive data from clients
+    const int MAX_HISTORY_SIZE = config_parser.get_int("MAX_HISTORY_SIZE");     // Maximum number of messages to store in the chat history
+    const int NUM_AUTH_ATTEMPTS = config_parser.get_int("NUM_AUTH_ATTEMPTS");   // Number of authentication attempts before disconnecting the client
+    // ---------------------------------------------------------------------------
+
 
     // ---------------------------------------------------------------------------
     // CONNECTION
+
     // Create a server socket
     logger.log(Logger::log_level::DEBUG, "Creating server socket...");
+
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     bool socket_created = (server_socket != -1);
     if (!socket_created) // check if socket was created successfully
@@ -84,10 +126,12 @@ int main()
         logger.log(Logger::log_level::ERROR, "Error creating server socket");
         return 1;
     }
+
     logger.log(Logger::log_level::DEBUG, "...Server socket created");
 
     // Bind the socket to an IP address and port
     logger.log(Logger::log_level::DEBUG, "Binding server socket...");
+
     struct sockaddr_in server_address_info; // Set up the server address structure
     server_address_info.sin_family = AF_INET;
     server_address_info.sin_port = htons(PORT_NUMBER);  // Port number
@@ -104,10 +148,12 @@ int main()
         close(server_socket);
         return 1;
     }
+
     logger.log(Logger::log_level::DEBUG, "...Server socket bound");
 
-    // Listen for incoming connections
+    // Start listening on the server socket for incoming connections
     logger.log(Logger::log_level::DEBUG, "Listening on server socket...");
+
     int listen_result = listen(server_socket, MAX_CLIENTS);
     bool listen_success = (listen_result != -1);
     if (!listen_success)
@@ -116,18 +162,19 @@ int main()
         close(server_socket);
         return 1;
     }
+
     logger.log(Logger::log_level::DEBUG, "...Server socket listening");
     // ---------------------------------------------------------------------------
 
+
     // ---------------------------------------------------------------------------
-    // MAIN SERVER LOOP
-    TSQueue<Message> input_queue; // for server input (e.g., commands)
-    TSQueue<Message> output_queue; // for server output (e.g., messages to clients)
+    // MAIN SERVER LOGIC
+    TSQueue<Message> input_queue;   // for server input (e.g., commands)
+    TSQueue<Message> output_queue;  // for server output (e.g., messages to clients)
 
-    std::vector<int> client_sockets; // to store client sockets
-    std::map<int, User> connected_clients; // to store connected clients (key: socket, value: User object)
+    std::map<int, User> connected_clients;  // to store connected clients (key: socket, value: User object)
 
-    std::deque<Message> chat_history;
+    std::deque<Message> chat_history;    // to store chat history
 
     // Input thread (for server input, e.g., commands)
     std::thread input_thread([&input_queue, &logger]()
@@ -183,8 +230,6 @@ int main()
                         {
                             continue;
                         }
-
-                        // handle the case when the message is 
 
                         send_data(client.first, message.to_string(), logger);
 
@@ -338,13 +383,13 @@ int main()
             database_file << username << ":" << password << std::endl;
         }
 
-        chat_history_push(chat_history, connected_info_message);
+        chat_history_push(chat_history, connected_info_message, MAX_HISTORY_SIZE);
         output_queue.push(connected_info_message); // push the message to the output_queue so it can be broadcasted to all clients
 
         // Create a thread for each client
         // Received client messages will be pushed to the output_queue
         logger.log(Logger::log_level::DEBUG, "Creating client thread...");
-        std::thread client_thread([client_socket, &output_queue, &logger, &connected_clients, &chat_history]()
+        std::thread client_thread([client_socket, &output_queue, &logger, &connected_clients, &chat_history, &BUFFER_SIZE, &MAX_HISTORY_SIZE]()
             {
                 char recv_buffer[BUFFER_SIZE];
                 // size_t recv_buffer_size = sizeof(recv_buffer);
@@ -363,7 +408,7 @@ int main()
                         logger.log(Logger::log_level::ERROR, "Client disconnected");
                         Message message("exit", connected_clients[client_socket].get_username());
                         output_queue.push(message);
-                        chat_history_push(chat_history, message);
+                        chat_history_push(chat_history, message, MAX_HISTORY_SIZE);
                         break;
                     }
                     else if (received_message_bytes == -1)
@@ -375,7 +420,7 @@ int main()
                     Message message(message_content, connected_clients[client_socket].get_username());
 
                     output_queue.push(message);
-                    chat_history_push(chat_history, message);
+                    chat_history_push(chat_history, message, MAX_HISTORY_SIZE);
                 }
             }
         );
