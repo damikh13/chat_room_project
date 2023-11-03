@@ -1,6 +1,4 @@
-#include "Logger.h"
 #include <iostream>
-
 #include "Logger.h"
 
 Logger::Logger(const std::string& file_path, log_level logLevel)
@@ -43,7 +41,7 @@ void Logger::log(log_level level, const std::string& message)
     //     << "] "
     //     << message
     //     << std::endl;
-// }
+    // }
 }
 
 std::string Logger::get_current_time()
