@@ -20,8 +20,8 @@
 #include "TSQueue.h"
 
 const int MAX_CLIENTS = 5;
-const int PORT_NUMBER = 2048;
-const int BUFFER_SIZE = 1024; // TODO: change to this instead of sizeof(recv_buffer)
+const int PORT_NUMBER = 2048; // TODO: put this in a 
+const size_t BUFFER_SIZE = 1024;
 const int MAX_HISTORY_SIZE = 10;
 const int NUM_AUTH_ATTEMPTS = 3; // TODO: make this configurable
 
@@ -46,7 +46,6 @@ inline void chat_history_push(std::deque<Message>& chat_history, const Message& 
     chat_history.push_back(message);
 }
 
-// In send_data function
 void send_data(int socket, const std::string& data, Logger& logger)
 {
     std::string data_with_delimiter = data + ";";
@@ -131,7 +130,6 @@ int main()
     std::deque<Message> chat_history;
 
     // Input thread (for server input, e.g., commands)
-    // TODO: remove this thread and use the main thread instead?
     std::thread input_thread([&input_queue, &logger]()
         {
             std::string server_input;
@@ -145,7 +143,7 @@ int main()
             }
         }
     );
-    input_thread.detach(); // TODO: need to detach this thread?
+    input_thread.detach();
 
     // Output thread (for broadcasting messages to clients)
     std::thread output_thread([&output_queue, &connected_clients, &logger]()
@@ -166,7 +164,6 @@ int main()
                             {
                                 return client.second.get_username() == message.get_sender();
                             });
-
                         if (it != connected_clients.end())
                         {
                             connected_clients.erase(it);
@@ -217,14 +214,14 @@ int main()
 
         std::string handshake_message;
         char recv_buffer[BUFFER_SIZE];
-        int handshake_message_bytes = receive_data(client_socket, recv_buffer, sizeof(recv_buffer), handshake_message, logger);
+        // int handshake_message_bytes = receive_data(client_socket, recv_buffer, sizeof(recv_buffer), handshake_message, logger);
+        int handshake_message_bytes = receive_data(client_socket, recv_buffer, BUFFER_SIZE, handshake_message, logger);
         if (handshake_message_bytes == 0)
         {
             logger.log(Logger::log_level::ERROR, "Client disconnected");
         }
         else if (handshake_message_bytes == -1)
         {
-            // TODO: won't this be logged infinitely?
             logger.log(Logger::log_level::ERROR, "Error receiving handshake message from client");
         }
         logger.log(Logger::log_level::DEBUG, "Handshake message: \"" + handshake_message + "\"");
@@ -298,7 +295,8 @@ int main()
                     // receive new password from client
                     std::string new_handshake_message;
                     char recv_buffer[BUFFER_SIZE];
-                    int new_handshake_message_bytes = receive_data(client_socket, recv_buffer, sizeof(recv_buffer), new_handshake_message, logger);
+                    // int new_handshake_message_bytes = receive_data(client_socket, recv_buffer, sizeof(recv_buffer), new_handshake_message, logger);
+                    int new_handshake_message_bytes = receive_data(client_socket, recv_buffer, BUFFER_SIZE, new_handshake_message, logger);
                     if (new_handshake_message_bytes == 0)
                     {
                         logger.log(Logger::log_level::ERROR, "Client disconnected");
@@ -336,7 +334,7 @@ int main()
         else if (new_or_existing_user == "new_user")
         {
             logger.log(Logger::log_level::DEBUG, "Writing new user's info: " + username + ":" + password + " to database");
-            std::ofstream database_file("database.txt", std::ios_base::app); // TODO: make this configurablek
+            std::ofstream database_file("database.txt", std::ios_base::app); // TODO: make this configurable
             database_file << username << ":" << password << std::endl;
         }
 
@@ -349,11 +347,12 @@ int main()
         std::thread client_thread([client_socket, &output_queue, &logger, &connected_clients, &chat_history]()
             {
                 char recv_buffer[BUFFER_SIZE];
-                size_t recv_buffer_size = sizeof(recv_buffer);
+                // size_t recv_buffer_size = sizeof(recv_buffer);
+
                 std::string message_content;
                 while (true)
                 {
-                    int received_message_bytes = receive_data(client_socket, recv_buffer, recv_buffer_size, message_content, logger);
+                    int received_message_bytes = receive_data(client_socket, recv_buffer, BUFFER_SIZE, message_content, logger);
 
                     // Check if the client disconnected
                     // it's either if the received message is empty or if the received message is 'exit'
