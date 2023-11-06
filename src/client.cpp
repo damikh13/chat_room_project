@@ -9,7 +9,6 @@
 #include "TSQueue.h"
 
 // HEADER FILES
-#include "ChatRoom.h"
 #include "ConfigParser.h"
 #include "Logger.h"
 #include "Message.h"
@@ -98,6 +97,7 @@ inline bool connect_to_server(int client_socket, sockaddr_in& server_address_inf
     int connect_result = connect(client_socket, (struct sockaddr*)&server_address_info, sizeof(server_address_info));
     if (connect_result == -1)
     {
+        std::cout << "Error connecting to the server" << std::endl;
         logger.log(Logger::log_level::ERROR, "Error connecting to the server");
         close(client_socket);
         return false;
@@ -140,21 +140,205 @@ inline std::string receive_server_response(int client_socket, Logger& logger, co
         return "";
     }
 }
-inline bool handle_server_response(const std::string& server_message, int client_socket)
+void handle_new_user_registration(int client_socket, const std::string& username, Logger& logger, int CHAT_HISTORY_SIZE)
 {
-    if (server_message.find("User exists. Welcome back!") != std::string::npos)
+    logger.log(Logger::log_level::DEBUG, "New user");
+    std::cout << "Enter password your new password: ";
+    std::string password = get_user_input();
+    std::cout << std::endl;
+
+    std::string handshake_message = "new_user:" + username + ":" + password + ":" + std::to_string(CHAT_HISTORY_SIZE);
+    send_handshake_message(client_socket, handshake_message, logger);
+}
+bool process_server_response(std::string& server_message, TSQueue<std::string>& output_queue, int client_socket)
+{
+    bool authorized = false;
+    bool password_was_correct = (server_message.find("User exists. Welcome back!") != std::string::npos);
+    bool password_was_incorrect = (server_message.find("User does not exist. Please, try again.") != std::string::npos);
+    bool too_many_authentication_attempts = (server_message.find("Too many authentication attempts. Disconnecting...") != std::string::npos);
+    bool credentials_already_in_use = (server_message.find("Credentials already in use. Please, try again.") != std::string::npos);
+
+    if (password_was_correct)
     {
-        return true;
+        authorized = true;
+
+        // print first part of the message (up to and including the first ';')
+        std::cout << std::endl;
+        std::cout << server_message.substr(0, server_message.find(';')) << std::endl;
+
+        // remove first part of the message (up to and including the first ';')
+        server_message.erase(0, server_message.find(';') + 1);
+
+        // push the rest of the message (chat history) to the output queue
+        output_queue.push(server_message);
     }
-    else if (server_message.find("User does not exist. Please, try again.") != std::string::npos ||
-        server_message.find("Too many authentication attempts. Disconnecting...") != std::string::npos ||
-        server_message.find("Credentials already in use. Please, try again.") != std::string::npos)
+    else if (password_was_incorrect)
     {
-        std::cout << server_message << std::endl;
+        std::cout << "User does not exist. Please, try again." << std::endl;
+    }
+    else if (too_many_authentication_attempts)
+    {
+        std::cout << "Too many authentication attempts. Disconnecting..." << std::endl;
         close(client_socket);
         return false;
     }
-    return false;
+    else if (credentials_already_in_use)
+    {
+        std::cout << "Credentials already in use. Please, try again." << std::endl;
+        close(client_socket);
+        return false;
+    }
+
+    return authorized;
+}
+bool handle_existing_user(int client_socket, const std::string& username, Logger& logger, int CHAT_HISTORY_SIZE, TSQueue<std::string>& output_queue, size_t BUFFER_SIZE)
+{
+    logger.log(Logger::log_level::DEBUG, "Existing user");
+    std::string handshake_message;
+    bool password_authenticated = false;
+
+    while (true)
+    {
+        // Get client password
+        std::cout << "Enter password: ";
+        std::string password_attempt = get_user_input();
+
+        // Send handshake message with client password to server
+        handshake_message = "existing_user:" + username + ":" + password_attempt + ":" + std::to_string(CHAT_HISTORY_SIZE);
+        send_handshake_message(client_socket, handshake_message, logger);
+
+        // Receive server response
+        usleep(100000); // TODO: make this better
+        logger.log(Logger::log_level::DEBUG, "Receiving message from server...");
+        std::string server_message = receive_server_response(client_socket, logger, BUFFER_SIZE);
+        if (server_message.empty())
+        {
+            continue;
+        }
+
+        logger.log(Logger::log_level::DEBUG, "...Received message from server: " + server_message);
+
+        bool password_was_correct = (server_message.find("User exists. Welcome back!") != std::string::npos);
+        bool password_was_incorrect = (server_message.find("User does not exist. Please, try again.") != std::string::npos);
+        bool too_many_authentication_attempts = (server_message.find("Attempts left: 0") != std::string::npos);
+        bool credentials_already_in_use = (server_message.find("Credentials already in use. Please, try again.") != std::string::npos);
+
+        if (password_was_correct)
+        {
+            password_authenticated = true;
+            std::cout << std::endl;
+
+            // print first part of the message (up to and including the first ';')
+            std::cout << server_message.substr(0, server_message.find(';')) << std::endl;
+
+            // remove first part of the message (up to and including the first ';')
+            server_message.erase(0, server_message.find(';') + 1);
+
+            // push the rest of the message (chat history) to the output queue
+            output_queue.push(server_message);
+            break;
+        }
+        else if (too_many_authentication_attempts)
+        {
+            std::cout << "Too many authentication attempts. Disconnecting..." << std::endl;
+            close(client_socket);
+            return false;
+        }
+        else if (password_was_incorrect)
+        {
+            std::cout << server_message << std::endl;
+        }
+        else if (credentials_already_in_use)
+        {
+            std::cout << "Credentials already in use. Please, try again." << std::endl;
+            close(client_socket);
+            return false;
+        }
+    }
+
+    return password_authenticated;
+}
+
+// MAIN CLIENT LOGIC HELPERS
+void handle_user_input(TSQueue<std::string>& input_queue, Logger& logger, bool& disconnect)
+{
+    std::string user_input;
+    while (true)
+    {
+        std::getline(std::cin, user_input);
+
+        if (user_input == "exit")
+        {
+            disconnect = true;
+            input_queue.push(user_input);
+            logger.log(Logger::log_level::DEBUG, "Pushed user input \"" + user_input + "\" to input_queue");
+            break;
+        }
+
+        bool valid_message = is_valid_message(user_input);
+        if (!valid_message)
+        {
+            std::cout << "Invalid message. Please, try again" << std::endl;
+            continue;
+        }
+
+        input_queue.push(user_input);
+        logger.log(Logger::log_level::DEBUG, "Pushed user input \"" + user_input + "\" to input_queue");
+    }
+}
+void send_user_input(int client_socket, TSQueue<std::string>& input_queue, Logger& logger, bool& disconnect)
+{
+    if (!input_queue.empty())
+    {
+        std::string user_input = input_queue.pop();
+        logger.log(Logger::log_level::DEBUG, "Popped user input \"" + user_input + "\" from input_queue, sending to server...");
+
+        bool message_sent = send_data(client_socket, user_input, logger);
+        if (message_sent)
+        {
+            logger.log(Logger::log_level::DEBUG, "...Sent user input to server");
+        }
+        if (disconnect)
+        {
+            return;
+        }
+    }
+}
+void handle_server_messages(int client_socket, TSQueue<std::string>& output_queue, Logger& logger, size_t BUFFER_SIZE)
+{
+    char recv_buffer[BUFFER_SIZE];
+    memset(recv_buffer, 0, sizeof(recv_buffer));
+    int bytes_read = recv(client_socket, recv_buffer, sizeof(recv_buffer), 0);
+
+    if (bytes_read > 0)
+    {
+        logger.log(Logger::log_level::DEBUG, "...Received message from server: \"" + std::string(recv_buffer, bytes_read) + "\""
+            + ", pushing to output_queue...");
+        std::string server_message(recv_buffer, bytes_read);
+        output_queue.push(server_message);
+    }
+}
+void display_chat(TSQueue<std::string>& output_queue, Logger& logger)
+{
+    while (!output_queue.empty())
+    {
+        std::string messages_with_delimiter = output_queue.pop();
+        std::stringstream ss(messages_with_delimiter);
+
+        std::string actual_message;
+        while (std::getline(ss, actual_message, ';'))
+        {
+            if (!actual_message.empty()) // To avoid printing empty lines due to trailing delimiter
+            {
+                std::cout << actual_message << std::endl;
+                logger.log(Logger::log_level::DEBUG, "Displayed message from server: " + actual_message);
+            }
+            if ("End of chat history." == actual_message)
+            {
+                std::cout << std::endl;
+            }
+        }
+    }
 }
 
 int main(int argc, char* argv[])
@@ -220,97 +404,28 @@ int main(int argc, char* argv[])
 
     // ---------------------------------------------------------------------------
     // AUTHORIZATION
-    bool authorized = false;
     bool password_authenticated = false;
     std::cout << "Welcome to the chat room!" << std::endl;
     std::string password;
     std::string handshake_message;
+    logger.log(Logger::log_level::DEBUG, "Asking user if they are a new user or an existing user...");
     std::cout << "Are you a new user? (y/n): ";
     while (true)
     {
-        std::string answer;
-        std::getline(std::cin, answer);
+        std::string answer = get_user_input();
         char first_answer_char = answer[0];
         if (first_answer_char == 'y' || first_answer_char == 'Y') // new user
         {
-            std::cout << "Enter password your new password: ";
-            std::string password;
-            std::getline(std::cin, password);
-            std::cout << std::endl;
-            handshake_message = "new_user:" + username + ":" + password + ":" + std::to_string(CHAT_HISTORY_SIZE);
-            send_data(client_socket, handshake_message, logger);
-            break;
+            logger.log(Logger::log_level::DEBUG, "...New user");
+            handle_new_user_registration(client_socket, username, logger, CHAT_HISTORY_SIZE);
         }
         else if (first_answer_char == 'n' || first_answer_char == 'N') // existing user
         {
-            logger.log(Logger::log_level::DEBUG, "Existing user");
-            do
+            logger.log(Logger::log_level::DEBUG, "...Existing user");
+            bool password_authenticated = handle_existing_user(client_socket, username, logger, CHAT_HISTORY_SIZE, output_queue, BUFFER_SIZE);
+            if (!password_authenticated)
             {
-                std::cout << "Enter password: ";
-                std::string password_attempt;
-                std::getline(std::cin, password_attempt);
-                std::cout << std::endl;
-                handshake_message = "existing_user:" + username + ":" + password_attempt + ":" + std::to_string(CHAT_HISTORY_SIZE);
-                logger.log(Logger::log_level::DEBUG, "Sending handshake message to server...");
-                send_data(client_socket, handshake_message, logger);
-                usleep(100000); // TODO: just commented this out, but it might be needed
-                logger.log(Logger::log_level::DEBUG, "Waiting for server response...");
-                char recv_buffer[BUFFER_SIZE];
-                memset(recv_buffer, 0, sizeof(recv_buffer));
-                int bytes_read = recv(
-                    client_socket, // socket
-                    recv_buffer, // where to store the data
-                    sizeof(recv_buffer), // max number of bytes to read
-                    0 // flags
-                );
-                bool recv_success = (bytes_read != -1);
-                if (!recv_success) // TODO: handle this better
-                {
-                    // logger.log(Logger::log_level::ERROR, "Error receiving data from server");
-                    // break;
-                }
-                else if (bytes_read > 0)
-                {
-                    std::string server_message(recv_buffer, bytes_read - 1);
-                    //                                                 ^^^ skip ';' delimiter
-                    logger.log(Logger::log_level::DEBUG, "Received message from server: " + server_message);
-                    if (server_message.find("User exists. Welcome back!") != std::string::npos)
-                    {
-                        authorized = true;
-                        password_authenticated = true;
-                        // print first part of the message (up to and including the first ';')
-                        std::cout << server_message.substr(0, server_message.find(';')) << std::endl;
-                        // remove first part of the message (up to and including the first ';')
-                        server_message.erase(0, server_message.find(';') + 1);
-                        output_queue.push(server_message);
-                        break;
-                    }
-                    else if (server_message.find("User does not exist. Please, try again.") != std::string::npos)
-                    {
-                        std::cout << "User does not exist. Please, try again." << std::endl;
-                    }
-                    else if (server_message.find("Too many authentication attempts. Disconnecting...") != std::string::npos)
-                    {
-                        std::cout << "Too many authentication attempts. Disconnecting..." << std::endl;
-                        close(client_socket);
-                        return 1;
-                    }
-                    else if (server_message.find("Credentials already in use. Please, try again.") != std::string::npos)
-                    {
-                        std::cout << "Credentials already in use. Please, try again." << std::endl;
-                        close(client_socket);
-                        return 1;
-                    }
-                }
-            } while (!authorized);
-
-            if (password_authenticated)
-            {
-                break;
-            }
-            else
-            {
-                std::cout << "Invalid password. Please, try again." << std::endl;
+                return 1;
             }
         }
         else // invalid input
@@ -320,121 +435,34 @@ int main(int argc, char* argv[])
             std::cout << "Are you a new user? (y/n): ";
         }
     }
-    // bool handshake_sent = send_data(client_socket, handshake_message, logger);
     logger.log(Logger::log_level::DEBUG, "Sent handshake message to server");
     // ---------------------------------------------------------------------------
 
-    // MESSAGE HANDLING
-    // Allocate a buffer to store the server's response
-    char buffer[BUFFER_SIZE];
-    memset(buffer, 0, sizeof(buffer));
 
-    // Input thread
+    // ---------------------------------------------------------------------------
+    // MAIN CLIENT LOGIC
+
+    // Create a thread to handle user input
     bool disconnect = false;
-    std::thread input_thread([&input_queue, &logger, &disconnect]()
-        {
-            std::string user_input;
-            while (true)
-            {
-                std::getline(std::cin, user_input);
+    std::thread input_thread(handle_user_input, std::ref(input_queue), std::ref(logger), std::ref(disconnect));
 
-                if (user_input == "exit")
-                {
-                    disconnect = true;
-                    input_queue.push(user_input);
-                    logger.log(Logger::log_level::DEBUG, "Pushed user input \"" + user_input + "\" to input_queue");
-                    break;
-                }
-
-                bool valid_message = is_valid_message(user_input);
-                if (!valid_message)
-                {
-                    std::cout << "Invalid message. Please, try again" << std::endl;
-                    continue;
-                }
-
-                input_queue.push(user_input);
-                logger.log(Logger::log_level::DEBUG, "Pushed user input \"" + user_input + "\" to input_queue");
-            }
-        }
-    );
-
-    // Main client logic
+    // Main client loop
     while (true)
     {
-        // Check for user input and send it
-        bool input_available = !input_queue.empty();
-        if (input_available)
+        // Send existing user's input to the server
+        send_user_input(client_socket, input_queue, logger, disconnect);
+        if (disconnect)
         {
-            std::string user_input = input_queue.pop();
-            logger.log(
-                Logger::log_level::DEBUG,
-                "Popped user input \""
-                + user_input
-                + "\" from input_queue, sending to server..."
-            );
-
-            bool message_sent = send_data(client_socket, user_input, logger);
-            if (message_sent)
-            {
-                logger.log(Logger::log_level::DEBUG, "...Sent user input to server");
-            }
-            if (disconnect)
-            {
-                break;
-            }
+            break;
         }
 
-        // Check for server messages
-        char recv_buffer[BUFFER_SIZE];
-        memset(recv_buffer, 0, sizeof(recv_buffer));
-        int bytes_read = recv(
-            client_socket, // socket
-            recv_buffer, // where to store the data
-            sizeof(recv_buffer), // max number of bytes to read
-            0 // flags
-        );
-        bool recv_success = (bytes_read != -1);
-        if (!recv_success) // TODO: handle this better
-        {
-            // logger.log(Logger::log_level::ERROR, "Error receiving data from server");
-            // break;
-        }
-        else if (bytes_read > 0)
-        {
-            logger.log(
-                Logger::log_level::DEBUG,
-                "...Received message from server: \""
-                + std::string(recv_buffer, bytes_read)
-                + "\""
-                + ", pushing to output_queue..."
-            );
-            std::string server_message(recv_buffer, bytes_read);
-            output_queue.push(server_message);
-        }
+        // Push server messages to the output queue
+        handle_server_messages(client_socket, output_queue, logger, BUFFER_SIZE);
 
-        // Display chat
-        bool chat_history_started = false;
-        while (!output_queue.empty())
-        {
-            std::string messages_with_delimiter = output_queue.pop();
-            std::stringstream ss(messages_with_delimiter);
-
-            std::string actual_message;
-            while (std::getline(ss, actual_message, ';'))
-            {
-                if (!actual_message.empty()) // To avoid printing empty lines due to trailing delimiter
-                {
-                    std::cout << actual_message << std::endl;
-                    logger.log(Logger::log_level::DEBUG, "Displayed message from server: " + actual_message);
-                }
-                if ("End of chat history." == actual_message)
-                {
-                    std::cout << std::endl;
-                }
-            }
-        }
+        // Display chat (if there are any messages in the output queue)
+        display_chat(output_queue, logger);
     }
+    // ---------------------------------------------------------------------------
 
     // Close the socket and join the input thread
     close(client_socket);
