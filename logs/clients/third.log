@@ -1,0 +1,23 @@
+2023-11-06 21:42:44 [INFO] Logger started
+2023-11-06 21:42:44 [DEBUG] Reading config file...
+2023-11-06 21:42:44 [DEBUG] Read key-value pair: [USERNAME][third]
+2023-11-06 21:42:44 [DEBUG] Read key-value pair: [PORT_NUMBER][8080]
+2023-11-06 21:42:44 [DEBUG] Read key-value pair: [BUFFER_SIZE][1024]
+2023-11-06 21:42:44 [DEBUG] Read key-value pair: [CHAT_HISTORY_SIZE][10]
+2023-11-06 21:42:44 [DEBUG] Read key-value pair: [IP_ADDRESS][127.0.0.1]
+2023-11-06 21:42:44 [DEBUG] ...Finished reading config file
+2023-11-06 21:42:44 [DEBUG] Connected to server
+2023-11-06 21:42:46 [DEBUG] New user
+2023-11-06 21:42:46 [DEBUG] Sending data to server: "new_user:third:lkm:10"
+2023-11-06 21:42:46 [DEBUG] Sent handshake message to server
+2023-11-06 21:42:46 [DEBUG] Sent handshake message to server
+2023-11-06 21:42:46 [DEBUG] ...Received message from server: "21:42:46 [server]: Client [third][new_user] connected.;", pushing to output_queue...
+2023-11-06 21:42:46 [DEBUG] Displayed message from server: 21:42:46 [server]: Client [third][new_user] connected.
+2023-11-06 21:42:51 [DEBUG] ...Received message from server: "21:42:51 [server]: Client [first] disconnected.;", pushing to output_queue...
+2023-11-06 21:42:51 [DEBUG] Displayed message from server: 21:42:51 [server]: Client [first] disconnected.
+2023-11-06 21:42:55 [DEBUG] ...Received message from server: "21:42:55 [server]: Client [first][existing_user] connected.;", pushing to output_queue...
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:55 [server]: Client [first][existing_user] connected.
+2023-11-06 21:43:14 [DEBUG] ...Received message from server: "21:43:14 [server]: Client [first] disconnected.;", pushing to output_queue...
+2023-11-06 21:43:14 [DEBUG] Displayed message from server: 21:43:14 [server]: Client [first] disconnected.
+2023-11-06 21:43:15 [DEBUG] ...Received message from server: "21:43:15 [server]: Client [second] disconnected.;", pushing to output_queue...
+2023-11-06 21:43:15 [DEBUG] Displayed message from server: 21:43:15 [server]: Client [second] disconnected.

@@ -1,0 +1,24 @@
+2023-11-06 21:42:52 [INFO] Logger started
+2023-11-06 21:42:52 [DEBUG] Reading config file...
+2023-11-06 21:42:52 [DEBUG] Read key-value pair: [USERNAME][first]
+2023-11-06 21:42:52 [DEBUG] Read key-value pair: [PORT_NUMBER][8080]
+2023-11-06 21:42:52 [DEBUG] Read key-value pair: [BUFFER_SIZE][1024]
+2023-11-06 21:42:52 [DEBUG] Read key-value pair: [CHAT_HISTORY_SIZE][10]
+2023-11-06 21:42:52 [DEBUG] Read key-value pair: [IP_ADDRESS][127.0.0.1]
+2023-11-06 21:42:52 [DEBUG] ...Finished reading config file
+2023-11-06 21:42:52 [DEBUG] Connected to server
+2023-11-06 21:42:54 [DEBUG] Existing user
+2023-11-06 21:42:55 [DEBUG] Sending data to server: "existing_user:first:asdf:10"
+2023-11-06 21:42:55 [DEBUG] Sent handshake message to server
+2023-11-06 21:42:55 [DEBUG] Receiving message from server...
+2023-11-06 21:42:55 [DEBUG] ...Received message from server: User exists. Welcome back!;Chat history [10]:;21:42:18 [server]: Client [first][new_user] connected.;21:42:28 [server]: Client [second][new_user] connected.;21:42:35 [first]: hey, sec!;21:42:39 [second]: hi, first!;21:42:46 [server]: Client [third][new_user] connected.;21:42:51 [server]: Client [first] disconnected.;End of chat history.;21:42:55 [server]: Client [first][existing_user] connected.
+2023-11-06 21:42:55 [DEBUG] Sent handshake message to server
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: Chat history [10]:
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:18 [server]: Client [first][new_user] connected.
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:28 [server]: Client [second][new_user] connected.
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:35 [first]: hey, sec!
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:39 [second]: hi, first!
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:46 [server]: Client [third][new_user] connected.
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:51 [server]: Client [first] disconnected.
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: End of chat history.
+2023-11-06 21:42:55 [DEBUG] Displayed message from server: 21:42:55 [server]: Client [first][existing_user] connected.
