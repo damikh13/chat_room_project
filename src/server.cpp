@@ -13,7 +13,6 @@
 
 // HEADER FILES
 #include "Logger.h"
-#include "ChatRoom.h"
 #include "ConfigParser.h"
 #include "Message.h"
 #include "User.h"
