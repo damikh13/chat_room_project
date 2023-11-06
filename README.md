@@ -1,15 +1,57 @@
-# chat_room_project
-This is an academic chat project on C++. It lets to exchange messages among users in a network, using a simple console interface.
+# Chat Room Project
 
-# building
+This is an academic chat project implemented in C++. It allows users to exchange messages within a network using a simple console interface.
+
+## Building
+
+To build the project, follow these steps:
+
+1. Create a build directory:
 mkdir build
 cd build
+
+2. Configure the project using CMake:
 cmake ..
+
+3. Build the project:
 cmake --build .
 
-# running
-server side: ./server cfg/server/server.cfg logs/server/server.log
-client side: ./client cfg/clients/first.cfg logs/server/first.log
+Your executable will be located in the project root directory.
 
-# usage
-first, register or authorize ...
+## Running
+
+To run the project, you will need to start both the server and client sides:
+
+### Server Side
+
+Run the server with the following command:
+./server cfg/server/server.cfg logs/server/server.log
+
+
+### Client Side
+
+Run the client with the following command:
+./client cfg/clients/first.cfg logs/server/first.log
+
+
+## Usage
+
+1. **Registration and Authorization:**
+   - When you first connect to the chat room, you have the option to either register or authorize.
+   - If you choose to register, a new password will be added to the server's database.
+   - If you choose to authorize as a registered user, you will have three (by default, configurable in the server's config file) attempts to enter your password.
+   - If you fail to enter the correct password within the specified attempts, you will be disconnected.
+   - If you succeed, you will be connected to the chat room.
+
+2. **Chat Interaction:**
+   - Authorized users can see chat history.
+   - Once you are connected, you can send messages to the chat room.
+   - To exit, simply type "exit" and press Enter.
+
+## Config Files
+
+Config files are located in the `cfg/` folder. Each file contains descriptions of the variables, which are provided as comments within the files.
+
+Feel free to modify the configuration settings to customize the behavior of your chat room project.
+
+Enjoy using the chat room project!
