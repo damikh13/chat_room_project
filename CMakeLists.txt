@@ -3,10 +3,11 @@ project(ChatRoom)
 
 set(CMAKE_CXX_STANDARD 17)  # Use C++17 or later
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
 # Add the executable for the server
 add_executable(server
     src/server.cpp
-    src/ChatRoom.cpp
     src/User.cpp
     src/Message.cpp
     src/Logger.cpp
@@ -16,7 +17,6 @@ add_executable(server
 # Add the executable for the client
 add_executable(client
     src/client.cpp
-    src/ChatRoom.cpp
     src/User.cpp
     src/Message.cpp
     src/Logger.cpp
