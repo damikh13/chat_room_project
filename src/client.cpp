@@ -208,10 +208,10 @@ bool handle_existing_user(int client_socket, const std::string& username, Logger
         send_handshake_message(client_socket, handshake_message, logger);
 
         // Receive server response
-        usleep(100000); // TODO: make this better
+        usleep(100000);
         logger.log(Logger::log_level::DEBUG, "Receiving message from server...");
         std::string server_message = receive_server_response(client_socket, logger, BUFFER_SIZE);
-        if (server_message.empty())
+        if (server_message.empty()) // no message received yet
         {
             continue;
         }

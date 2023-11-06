@@ -18,15 +18,12 @@
 #include "User.h"
 #include "TSQueue.h"
 
-// TODO: fix bug
-// if the client disconnects while the server is waiting for the handshake message, the server will crash
-
 // GENERAL HELPERS
 int receive_data(int client_socket, char* buffer, size_t buffer_size, std::string& received_data, Logger& logger)
 {
     memset(buffer, 0, buffer_size);
     int bytes_read = recv(client_socket, buffer, buffer_size, 0);
-    if (bytes_read > 0) // TODO: handle this better
+    if (bytes_read > 0)
     {
         received_data = std::string(buffer, bytes_read);
     }
@@ -98,7 +95,7 @@ inline std::string receive_handshake_message(int client_socket, size_t BUFFER_SI
     if (handshake_message_bytes == 0)
     {
         logger.log(Logger::log_level::ERROR, "Client disconnected");
-        return "";
+        return "Client disconnected";
     }
     else if (handshake_message_bytes == -1)
     {
@@ -155,7 +152,6 @@ inline bool authenticate_user(const std::map<std::string, std::string>& database
 {
     bool user_exists = false;
 
-    // for (int i = 0; i < NUM_AUTH_ATTEMPTS - 1; ++i) // TODO: explain why -1
     for (int i = 0; i < NUM_AUTH_ATTEMPTS; ++i)
     {
         // Check if the username and password match the database
@@ -395,9 +391,13 @@ inline void handle_client_connection(int server_socket, TSQueue<Message>& output
 
         // Receive handshake message from client
         std::string handshake_message = receive_handshake_message(client_socket, BUFFER_SIZE, logger);
-        if (handshake_message.empty()) // TODO: same return "" for error and client disconnect
+        if (handshake_message.empty())
         {
-            // close(client_socket);
+            continue;
+        }
+        else if (handshake_message == "Client disconnected")
+        {
+            close(client_socket);
             continue;
         }
 
