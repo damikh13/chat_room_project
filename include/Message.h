@@ -4,7 +4,6 @@
 #include <string>
 #include <chrono>
 
-// TODO: add validation
 /*
 A class to represent chat messages, including
     * message content
