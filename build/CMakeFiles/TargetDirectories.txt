@@ -1,4 +1,0 @@
-/Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles/server.dir
-/Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles/client.dir
-/Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles/edit_cache.dir
-/Users/damikh13/Documents/University/year2/sem1/CS/EVM/chat_room_project/build/CMakeFiles/rebuild_cache.dir
