@@ -141,12 +141,14 @@ inline std::string receive_server_response(int client_socket, Logger& logger, co
     }
 }
 
-void handle_user_input(TSQueue<std::string>& input_queue, Logger& logger, bool& disconnect)
+void handle_user_input(TSQueue<std::string>& input_queue, Logger& logger, bool& disconnect, std::string config_file_path)
 {
     std::string user_input;
     while (true)
     {
         std::getline(std::cin, user_input);
+        std::string temp = user_input;
+        bool flag = false;
 
         if (user_input == "exit")
         {
@@ -154,10 +156,32 @@ void handle_user_input(TSQueue<std::string>& input_queue, Logger& logger, bool& 
             input_queue.push(user_input);
             logger.log(Logger::log_level::DEBUG, "Pushed user input \"" + user_input + "\" to input_queue");
             break;
+        }else if (temp.substr(0, 16) == "Change_my_name: "){
+            flag = true;
+            std::string cur_changer_login = "Change_my_name: ";
+            size_t foundIndex = temp.find(cur_changer_login);
+            std::string newUsername = temp.erase(foundIndex, cur_changer_login.length());
+
+            std::ifstream file(config_file_path);
+            std::ofstream outputFile("temp.cfg");
+
+            std::string line;
+            while (std::getline(file, line)) {
+                if (line.find("USERNAME = ") != std::string::npos) {
+                    outputFile << "USERNAME = " << newUsername << std::endl;
+                } else {
+                    outputFile << line << std::endl;
+                }
+            }
+            outputFile.close();
+
+            if (std::rename("temp.cfg", config_file_path.c_str()) != 0) {
+                std::cerr << "Failed to replace the file." << std::endl;
+            }
         }
 
         bool valid_message = is_valid_message(user_input);
-        if (!valid_message)
+        if (!valid_message && !flag)
         {
             std::cout << "Invalid message. Please, try again" << std::endl;
             continue;
@@ -393,7 +417,7 @@ int main(int argc, char* argv[])
 
     // Input thread
     bool disconnect = false;
-    std::thread input_thread(handle_user_input, std::ref(input_queue), std::ref(logger), std::ref(disconnect));
+    std::thread input_thread(handle_user_input, std::ref(input_queue), std::ref(logger), std::ref(disconnect), config_file_path);
 
     while (true)
     {
