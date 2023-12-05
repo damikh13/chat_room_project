@@ -511,33 +511,32 @@ int main(int argc, char* argv[])
 {
     // ---------------------------------------------------------------------------
     // ARGUMENT PARSING
-    if (argc != 3)
+    if (argc != 2)
     {
         std::cout << "Usage: " << argv[0] << " <config_file_path> <log_file_path>" << std::endl;
         return 1;
     }
-
     std::string config_file_path(argv[1]);  // Path to the config file
-    std::string log_file_path(argv[2]);     // Path to the log file
     // ---------------------------------------------------------------------------
-
-
-    // ---------------------------------------------------------------------------
-    // LOGGING
-    Logger logger(log_file_path, Logger::log_level::DEBUG); // Create a logger object
-    // ---------------------------------------------------------------------------
-
 
     // ---------------------------------------------------------------------------
     // CONFIG PARSER
-    ConfigParser config_parser(config_file_path, logger);
-
+    ConfigParser config_parser(config_file_path);
     const int MAX_CLIENTS = config_parser.get_int("MAX_CLIENTS");               // Maximum number of clients that can connect to the server simultaneously
     const int PORT_NUMBER = config_parser.get_int("PORT_NUMBER");               // Port number
     const size_t BUFFER_SIZE = config_parser.get_int("BUFFER_SIZE");            // Size of the buffer used to receive data from clients
     const int MAX_HISTORY_SIZE = config_parser.get_int("MAX_HISTORY_SIZE");     // Maximum number of messages to store in the chat history
     const int NUM_AUTH_ATTEMPTS = config_parser.get_int("NUM_AUTH_ATTEMPTS");   // Number of authentication attempts before disconnecting the client
-    std::string DATABASE_FILE_PATH = config_parser.get_string("DATABASE_FILE_PATH"); // Path to the database file
+    const std::string DATABASE_FILE_PATH = config_parser.get_string("DATABASE_FILE_PATH"); // Path to the database file
+    const std::string LOG_FILE = config_parser.get_string("LOG_FILE");      // Log file for the server
+    // ---------------------------------------------------------------------------
+
+    std::string file_location = "logs/server/" + LOG_FILE;
+    std::string log_file_path(file_location);
+
+    // ---------------------------------------------------------------------------
+    // LOGGING
+    Logger logger(log_file_path, Logger::log_level::DEBUG); // Create a logger object
     // ---------------------------------------------------------------------------
 
 

@@ -250,31 +250,32 @@ int main(int argc, char* argv[])
 {
     // ---------------------------------------------------------------------------
     // ARGUMENT PARSING
-    if (argc != 3)
+    if (argc != 2)
     {
         std::cout << "Usage: " << argv[0] << " <config_file_path> <log_file_path>" << std::endl;
         return 1;
     }
 
     std::string config_file_path(argv[1]);
-    std::string log_file_path(argv[2]);
-    // ---------------------------------------------------------------------------
-
-    // ---------------------------------------------------------------------------
-    // LOGGING
-    Logger logger(log_file_path, Logger::log_level::DEBUG);
-    // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
     // CONFIG PARSING
-    ConfigParser config_parser(config_file_path, logger);
+    ConfigParser config_parser(config_file_path);
     std::string username = config_parser.get_string("USERNAME");                // Username
     const int PORT_NUMBER = config_parser.get_int("PORT_NUMBER");               // Port number
     const int BUFFER_SIZE = config_parser.get_int("BUFFER_SIZE");               // Size of the buffer for receiving data from the server
     const int CHAT_HISTORY_SIZE = config_parser.get_int("CHAT_HISTORY_SIZE");   // Number of messages to display when a user joins the chat
     const std::string IP_ADDRESS = config_parser.get_string("IP_ADDRESS");      // IP address of the server
+    const std::string LOG_FILE = config_parser.get_string("LOG_FILE");      // Log file for the client
     // ---------------------------------------------------------------------------
 
+    std::string file_location = "logs/clients/" + LOG_FILE;
+    std::string log_file_path(file_location);
+
+    // ---------------------------------------------------------------------------
+    // LOGGING
+    Logger logger(log_file_path, Logger::log_level::DEBUG);
+    // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
     // CONNECTION
