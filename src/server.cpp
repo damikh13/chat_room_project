@@ -331,7 +331,7 @@ inline void create_client_thread(const int& client_socket, TSQueue<Message>& out
                             current_client.second.set_username(newUserName);
                         }
                     }
-                    std::string info_message_content = "client[" + oldUserName + "]" "changed their name to " + newUserName;
+                    std::string info_message_content = "client[" + oldUserName + "] " "changed their name to " + "'" + newUserName + "'";
                     Message info_message(info_message_content, "server");
                     output_queue.push(info_message);
                     continue;
