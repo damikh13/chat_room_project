@@ -227,20 +227,41 @@ inline void handle_existing_user(int client_socket, User& user, int NUM_AUTH_ATT
 inline void handle_new_user(const std::string& username, const std::string& password, const std::string& DATABASE_FILE_PATH, Logger& logger)
 {
     logger.log(Logger::log_level::DEBUG, "Writing new user's info: " + username + ":" + password + " to database...");
+    bool flag = true;
+    std::ifstream file(DATABASE_FILE_PATH);
+    std::vector<std::string> logins;
+    std::string line;
+    while (std::getline(file, line)) {
+        size_t pos = line.find(":");
+        if (pos != std::string::npos) {
+            std::string login = line.substr(0, pos);
+            logins.push_back(login);
+        }
+    }
+    file.close();
+    for (const auto& login : logins) {
+        if (login == username){
+            flag = false;
+            break;
+       }
+    }
+
     std::ofstream database_file(DATABASE_FILE_PATH, std::ios_base::app);
     if (!database_file.is_open())
     {
         logger.log(Logger::log_level::ERROR, "Error opening database file");
         return;
     }
-    database_file << username << ":" << password << std::endl;
-    logger.log(Logger::log_level::DEBUG, "...New user's info written to database");
+    if (flag){
+        database_file << username << ":" << password << std::endl;
+        logger.log(Logger::log_level::DEBUG, "...New user's info written to database");
+    }
     database_file.close();
 }
-inline void create_client_thread(const int& client_socket, TSQueue<Message>& output_queue, Logger& logger, std::map<int, User>& connected_clients, std::deque<Message>& chat_history, const size_t& BUFFER_SIZE, const int& MAX_HISTORY_SIZE)
+inline void create_client_thread(const int& client_socket, TSQueue<Message>& output_queue, Logger& logger, std::map<int, User>& connected_clients, std::deque<Message>& chat_history, const size_t& BUFFER_SIZE, const int& MAX_HISTORY_SIZE, const std::string& DATABASE_FILE_PATH)
 {
     logger.log(Logger::log_level::DEBUG, "Creating client thread...");
-    std::thread client_thread([client_socket, &output_queue, &logger, &connected_clients, &chat_history, &BUFFER_SIZE, &MAX_HISTORY_SIZE]()
+    std::thread client_thread([client_socket, &output_queue, &logger, &connected_clients, &chat_history, &BUFFER_SIZE, &MAX_HISTORY_SIZE, &DATABASE_FILE_PATH]()
         {
             char recv_buffer[BUFFER_SIZE];
 
@@ -252,7 +273,6 @@ inline void create_client_thread(const int& client_socket, TSQueue<Message>& out
                 // Check if the client disconnected
                 // it's either if the received message is empty or if the received message is 'exit'
                 bool client_disconnected = (received_message_bytes == 0 || message_content == "exit");
-
                 if (client_disconnected)
                 {
                     logger.log(Logger::log_level::ERROR, "Client disconnected");
@@ -267,11 +287,57 @@ inline void create_client_thread(const int& client_socket, TSQueue<Message>& out
                 else if (received_message_bytes == -1)
                 {
                     continue;
-                }
+                }else if (message_content.find("Change_my_name: ") == 0){
+                    std::string cur_user = connected_clients[client_socket].get_username();
 
+                    std::string oldUserName = cur_user;
+
+                    std::string newUserName = message_content;
+                    newUserName.erase(0, std::string("Change_my_name: ").length());
+            
+                    std::ifstream inputFile(DATABASE_FILE_PATH);
+
+                    std::ofstream outputFile("temp.txt");
+                    if (!outputFile.is_open()) {
+                        std::cerr << "Failed to create a temporary file." << std::endl;
+                        return 1;
+                    }
+
+                    std::string line;
+                    while (std::getline(inputFile, line)) {
+                        size_t pos = line.find(':');
+                        if (pos != std::string::npos) {
+                            std::string currentName = line.substr(0, pos);
+                            if (currentName == oldUserName) {
+                                outputFile << newUserName << line.substr(pos) << std::endl;
+                                continue;
+                            }
+                        }
+                        outputFile << line << std::endl;
+                    }
+
+                    outputFile.close();
+
+                    if (std::rename("temp.txt", DATABASE_FILE_PATH.c_str()) != 0) {
+                        std::cerr << "Failed to replace file." << std::endl;
+                        return 1;
+                    }
+
+                    // Change usernamme in connected_clients map:
+                    for (auto& current_client : connected_clients)
+                    {
+                        if (current_client.second.get_username() == oldUserName)
+                        {
+                            current_client.second.set_username(newUserName);
+                        }
+                    }
+                    std::string info_message_content = "client[" + oldUserName + "] " "changed their name to " + "'" + newUserName + "'";
+                    Message info_message(info_message_content, "server");
+                    output_queue.push(info_message);
+                    continue;
+                }
                 logger.log(Logger::log_level::DEBUG, "Received message from client: " + message_content);
                 Message message(message_content, connected_clients[client_socket].get_username());
-
                 output_queue.push(message);
                 chat_history_push(chat_history, message, MAX_HISTORY_SIZE);
             }
@@ -437,7 +503,7 @@ inline void handle_client_connection(int server_socket, TSQueue<Message>& output
         chat_history_push(chat_history, connected_info_message, MAX_HISTORY_SIZE);
         output_queue.push(connected_info_message); // push the message to the output_queue so it can be broadcasted to all clients
 
-        create_client_thread(client_socket, output_queue, logger, connected_clients, chat_history, BUFFER_SIZE, MAX_HISTORY_SIZE);
+        create_client_thread(client_socket, output_queue, logger, connected_clients, chat_history, BUFFER_SIZE, MAX_HISTORY_SIZE, DATABASE_FILE_PATH);
     }
 }
 
@@ -445,33 +511,32 @@ int main(int argc, char* argv[])
 {
     // ---------------------------------------------------------------------------
     // ARGUMENT PARSING
-    if (argc != 3)
+    if (argc != 2)
     {
         std::cout << "Usage: " << argv[0] << " <config_file_path> <log_file_path>" << std::endl;
         return 1;
     }
-
     std::string config_file_path(argv[1]);  // Path to the config file
-    std::string log_file_path(argv[2]);     // Path to the log file
     // ---------------------------------------------------------------------------
-
-
-    // ---------------------------------------------------------------------------
-    // LOGGING
-    Logger logger(log_file_path, Logger::log_level::DEBUG); // Create a logger object
-    // ---------------------------------------------------------------------------
-
 
     // ---------------------------------------------------------------------------
     // CONFIG PARSER
-    ConfigParser config_parser(config_file_path, logger);
-
+    ConfigParser config_parser(config_file_path);
     const int MAX_CLIENTS = config_parser.get_int("MAX_CLIENTS");               // Maximum number of clients that can connect to the server simultaneously
     const int PORT_NUMBER = config_parser.get_int("PORT_NUMBER");               // Port number
     const size_t BUFFER_SIZE = config_parser.get_int("BUFFER_SIZE");            // Size of the buffer used to receive data from clients
     const int MAX_HISTORY_SIZE = config_parser.get_int("MAX_HISTORY_SIZE");     // Maximum number of messages to store in the chat history
     const int NUM_AUTH_ATTEMPTS = config_parser.get_int("NUM_AUTH_ATTEMPTS");   // Number of authentication attempts before disconnecting the client
-    const std::string& DATABASE_FILE_PATH = config_parser.get_string("DATABASE_FILE_PATH"); // Path to the database file
+    const std::string DATABASE_FILE_PATH = config_parser.get_string("DATABASE_FILE_PATH"); // Path to the database file
+    const std::string LOG_FILE = config_parser.get_string("LOG_FILE");      // Log file for the server
+    // ---------------------------------------------------------------------------
+
+    std::string file_location = "logs/server/" + LOG_FILE;
+    std::string log_file_path(file_location);
+
+    // ---------------------------------------------------------------------------
+    // LOGGING
+    Logger logger(log_file_path, Logger::log_level::DEBUG); // Create a logger object
     // ---------------------------------------------------------------------------
 
 

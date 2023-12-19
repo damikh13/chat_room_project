@@ -1,10 +1,10 @@
 #include "ConfigParser.h"
 
 // CONSTRUCTOR AND DESTRUCTOR
-ConfigParser::ConfigParser(const std::string& config_file_path, Logger& logger) // Default constructor
+ConfigParser::ConfigParser(const std::string& config_file_path) // Default constructor
     : filename_(config_file_path)
 {
-    read_config_file(logger);
+    read_config_file();
 }
 ConfigParser::~ConfigParser()                                   // Default destructor
 {
@@ -20,13 +20,11 @@ std::string ConfigParser::get_string(const std::string& key)    // Get string va
     return config_[key];
 }
 
-void ConfigParser::read_config_file(Logger& logger)
+void ConfigParser::read_config_file()
 {
-    logger.log(Logger::log_level::DEBUG, "Reading config file...");
     std::ifstream config_file(filename_);
     if (!config_file.is_open())
     {
-        logger.log(Logger::log_level::ERROR, "Could not open config file: " + filename_);
         return;
     }
 
@@ -64,9 +62,6 @@ void ConfigParser::read_config_file(Logger& logger)
 
             // Store the key-value pair
             config_[key] = value;
-            logger.log(Logger::log_level::DEBUG, "Read key-value pair: [" + key + "][" + value + "]");
         }
     }
-
-    logger.log(Logger::log_level::DEBUG, "...Finished reading config file");
 }
