@@ -25,19 +25,20 @@ To run the project, you will need to start both the server (first) and client si
 ### Server Side
 
 Run the server with the following command:
-`./server cfg/server/server.cfg logs/server/server.log`
+`./server cfg/server/server.cfg`
 
 ### Client Side
 
+(Example based on the first client)
 Run the client with the following command:
-`./client cfg/clients/first.cfg logs/server/first.log`
+`./client cfg/clients/first.cfg`
 
 ## Usage
 
 1. **Registration and Authorization:**
 
     - When you first connect to the chat room, you have the option to either register or authorize.
-    - If you choose to register, a new password will be added to the server's database.
+    - If you choose to register, a new password will be added to the server's database (database.txt was changed to normal form).
     - If you choose to authorize as a registered user, you will have three (by default, configurable in the server's config file) attempts to enter your password.
     - If you fail to enter the correct password within the specified attempts, you will be disconnected.
     - If you succeed, you will be connected to the chat room.
@@ -46,6 +47,7 @@ Run the client with the following command:
     - Authorized users can see chat history.
     - Once you are connected, you can send messages to the chat room.
     - To exit, simply type "exit" and press Enter.
+    - To change your name (login), you can simply write while chatting in the chat console "Change_my_name: " + YourNewName (YourNewLogin). 
 
 ## Config Files
 
